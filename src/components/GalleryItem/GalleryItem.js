@@ -15,6 +15,7 @@ const GalleryItem = ({
   <li className={styles.galleryItem} data-fullviewimg={largeImageURL}>
     <img className={styles.itemImg} src={webformatURL} alt={tags}/>
 
+
     <div className={styles.stats}>
       <p className={styles.statsItem}>
         <i className="material-icons">thumb_up</i>
