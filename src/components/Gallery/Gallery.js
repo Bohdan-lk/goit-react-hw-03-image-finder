@@ -7,7 +7,16 @@ const Gallery = ({ items, onClick }) => (
   <>
     <ul className={styles.gallery}>
       {items.map(item => (
-        <GalleryItem key={item.id} {...item} onClick={onClick}/>
+        <GalleryItem
+        key={item.id}
+        largeImageURL={item.largeImageURL}
+        webformatURL={item.webformatURL}
+        likes={item.likes}
+        views={item.views}
+        comments={item.comments}
+        downloads={item.downloads}
+        tags={item.tags}
+        onClick={onClick}/>
       ))}
     </ul>
   </>

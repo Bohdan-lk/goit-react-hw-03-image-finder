@@ -6,79 +6,84 @@ import Button from '../Button/Button';
 import Gallery from '../Gallery/Gallery';
 import TextError from '../Error/TextError';
 import styles from './App.module.css';
-import * as API from '../../services/Api';
+import fetchedImages from '../../services/Api';
 
 export default class App extends Component {
   state = {
     images: [],
-    isLoading: false,
+    Loading: false,
     error: null,
     notFound: false,
-    page: 2,
+    page: 1,
     isModal: false,
     fullviewimg: '',
     value: '',
   };
 
+
   componentDidUpdate(prevProps, prevState) {
-    const { images } = this.state;
-    if (prevState.images === images) return;
-    window.scrollTo({
-      top: document.body.scrollHeight,
-      behavior: 'smooth',
-    });
+    const prevQuery = prevState.searchQuery;
+    const nextQuery = this.state.searchQuery;
+
+
+    if (prevQuery !== nextQuery) {
+      this.fetchImages();
+    }
+    if (prevState.images.length > 12) {
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
   }
 
-  handleFetchedImages = (value = 'cat', page = '1') => {
-    this.setState({ isLoading: true, value });
-    API.fetchedImages(value, page)
-      .then(res => {
-        if (res.hits.length === 0) {
+  fetchImages = () => {
+    const { searchQuery, page } = this.state;
+    this.setState({Loading:true });
+
+    fetchedImages
+      .fetchImagesWithQuery(searchQuery, page)
+      .then((images) => {
+        if (images.length === 0) {
           return this.setState({ images: [], notFound: true });
         }
-        return this.setState({
-          images: res.hits,
+        this.setState((prevState) => ({
+          images: [...prevState.images, ...images],
+          page: prevState.page + 1,
           notFound: false,
           error: null,
-          page: 2,
-        });
-      })
-      .catch(error => {
-        this.setState({ error });
-      })
-      .finally(() => this.setState({ isLoading: false }));
+        }));}
+      )
+      .catch((error) => this.setState({ error }))
+      .finally(() => this.setState({Loading:false }));
   };
 
-  handleLoadMore = () => {
-    this.setState({ isLoading: true });
-    const { value, page } = this.state;
-    API.fetchedImages(value, page)
-      .then(res => {
-        this.setState(state => ({
-          images: [...state.images, ...res.hits],
-          page: state.page + 1,
-          error: null,
-        }));
-      })
-      .catch(error => {
-        this.setState({ error });
-      })
-      .finally(() => this.setState({ isLoading: false }));
+  handleSearchFormSubmit = (query) => {
+    this.setState({
+      searchQuery: query,
+      page: 1,
+      images: [],
+    });
   };
+
+  scrollPage = async () => {
+    this.setState((state) => ({
+      page: state.page + 1,
+    }));
+    await this.fetchImages();
+  };
+
 
   handleCloseModal = () => this.setState({ isModal: false });
 
   handleOpenModal = fullviewimg =>
     this.setState({ isModal: true, fullviewimg });
 
-  hanleLoader = () => {
-    this.setState({ isLoading: true });
-  };
 
   render() {
     const {
       images,
-      isLoading,
+      Loading,
       error,
       notFound,
       isModal,
@@ -86,14 +91,14 @@ export default class App extends Component {
     } = this.state;
     return (
       <div className={styles.app}>
-        <SearchForm onSubmit={this.handleFetchedImages} />
+        <SearchForm onSubmit={this.handleSearchFormSubmit}/>
         {!!images.length && (
           <>
-            <Gallery items={images} onClick={this.handleOpenModal} />
-            <Button onClick={this.handleLoadMore} />
+            <Gallery items={images} onClick={this.handleOpenModal}/>
+            <Button onClick={this.scrollPage}/>
           </>
         )}
-        {isLoading && <SpinnerLoader />}
+        {Loading && <SpinnerLoader />}
         {notFound && <TextError>Not Found images! </TextError>}
         {error && <TextError>Whoops, something went wrong: {error.message} </TextError>}
         {isModal && (
